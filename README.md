@@ -1,190 +1,144 @@
 # AllayClaims
 
-**Lightweight land-claim plugin for Spigot, Paper, and Folia.**
-
-Golden-shovel rectangle claims, whole-chunk claims, a clean public API for
-third-party developers, and first-class Folia support — all in one jar.
-
----
+A lightweight gold-shovel claim plugin for Minecraft servers (Bukkit/Spigot/Paper/Folia). Create, resize, trust, and protect your claims with an intuitive two-click system. Includes an optional maintenance tax system and a claim management GUI.
 
 ## Features
 
-- **Two claim modes**
-  - **Shovel mode** — select two corners with a golden shovel to create a rectangular claim (GriefPrevention style).
-  - **Chunk mode** — claim the entire 16×16 chunk you're standing in with `/chunkclaim`.
-- **Claim blocks economy** — every player starts with a configurable block budget. Blocks are spent when claiming and refunded when unclaiming. Accrue more over time (`blocks-per-hour`) or buy/sell them with Vault.
-- **Trust system** — `/trust` and `/untrust` grant or revoke per-claim access to other players.
-- **Explosion toggle** — `/claimexplosion` enables or disables explosions inside a claim.
-- **Admin tools** — `/bbclaim delete|give|take|ignore` for server operators.
-- **PlaceholderAPI** — `%allayclaims_claim_block%` shows a player's available claim blocks.
-- **Vault economy** — optional buy/sell of claim blocks.
-- **100% translatable** — every message lives in `messages.yml`.
-- **Folia compatible** — runs natively on Folia's region/async/global schedulers with no extra configuration.
-- **Public API** — a stable, shaded API jar lets other plugins read claim data, create/delete claims, listen to cancellable events, and schedule tasks safely on both Bukkit and Folia.
-
----
+- **Two-click claim creation** — Right-click two corners with a golden shovel to claim an area.
+- **Claim resizing** — Right-click a corner block of your claim, then right-click the new position to resize.
+- **Trust system** — Allow other players to build in your claim with `/trust <player>`.
+- **Explosion toggle** — Enable or disable explosions per claim with `/claimexplosion`.
+- **Claim visualization** — Claim boundaries are shown with glowing blocks for a configurable duration.
+- **Economy integration** — Buy and sell claim blocks using Vault economy (`/buyclaimblocks`, `/sellclaimblocks`).
+- **Maintenance tax system** — Optional periodic tax charged per claim. Claims are locked if the owner cannot pay, and can be auto-deleted after the overdue payment deadline.
+- **Claim management menu** — Open `/cmenu` to buy blocks, sell blocks, and pay tax debt from a GUI.
+- **PlaceholderAPI support** — Exposes claim block placeholders.
+- **Folia-compatible** — Uses reflection-based scheduler abstraction to support both Bukkit and Folia.
 
 ## Requirements
 
 - Java 21+
-- Minecraft 1.20+
-- Spigot, Paper, or Folia
-
-**Optional:**
-- [Vault](https://www.spigotmc.org/resources/vault.34315/) — economy hook for buying/selling claim blocks.
-- [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/) — placeholder expansion.
-
----
+- Bukkit/Spigot/Paper/Folia 1.20+
+- [Vault](https://www.spigotmc.org/resources/vault.34315/) (required for economy features)
+- [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.62483/) (optional, for placeholders)
 
 ## Installation
 
-1. Drop `AllayClaims.jar` into your `plugins/` folder.
-2. Restart the server.
-3. Edit `config.yml` and `messages.yml` to taste, then `/reload` or restart.
-
-That's it — no database, no external services.
-
----
+1. Download `AllayClaims.jar` from the [Modrinth page](https://modrinth.com/user/AllayMC).
+2. Place the jar in your server's `plugins/` folder.
+3. Restart the server.
+4. Edit `plugins/AllayClaims/config.yml` to configure the plugin.
+5. Run `/reload` or restart again.
 
 ## Commands
 
-| Command | Description |
-|--------|-------------|
-| `/trust <player>` | Trust a player in the claim you're standing in. |
-| `/untrust <player>` | Revoke a player's trust. |
-| `/unclaim` | Delete the claim you're standing in. |
-| `/unallclaim` | Delete all of your claims. |
-| `/claimexplosion` | Toggle explosions in the current claim. |
-| `/chunkclaim` | Claim the chunk you're standing in (chunk mode only). |
-| `/chunkunclaim` | Unclaim the current chunk (chunk mode only). |
-| `/buyclaimblocks <amount>` | Buy claim blocks with money (requires Vault). |
-| `/sellclaimblocks <amount>` | Sell claim blocks for money (requires Vault). |
-| `/bbclaim <sub>` | Admin: `delete`, `give`, `take`, `ignore` (op only). |
-| `/allayclaims` | Show plugin info and credits. |
-
-**Permission:** `allayclaims.player` (default: true) grants basic claim access.
-
----
+| Command | Description | Permission |
+|---|---|---|
+| `/trust <player>` | Trust a player in the claim you're standing in | `allayclaims.player` |
+| `/untrust <player>` | Revoke trust from a player | `allayclaims.player` |
+| `/unclaim` | Delete the claim you're standing in | `allayclaims.player` |
+| `/unallclaim` | Delete all of your claims | `allayclaims.player` |
+| `/claimexplosion` | Toggle explosions in the current claim | `allayclaims.player` |
+| `/buyclaimblocks <amount>` | Buy claim blocks with money | `allayclaims.player` |
+| `/sellclaimblocks <amount>` | Sell claim blocks for money | `allayclaims.player` |
+| `/cmenu` | Open the claim management menu | `allayclaims.player` |
+| `/allayclaims` | Show plugin info and credits | `allayclaims.player` |
+| `/bbclaim <sub>` | Admin command (op only) | OP only |
 
 ## Configuration
 
-`config.yml`:
+See [`config.yml`](src/main/resources/config.yml) for all options. Key settings:
+
+### Claim Settings
 
 ```yaml
-# Claim mode: "shovel" or "chunk"
-claim-mode: shovel
+max-claim-blocks: 10000       # Maximum claim blocks a player can hold
+starting-claim-blocks: 1000   # Blocks given to new players
+min-claim-width: 5             # Minimum claim width
+min-claim-height: 5            # Minimum claim height
+claim-tool: GOLDEN_SHOVEL      # Tool used to create/resize claims
+visualization-block: GLOWSTONE # Block shown for claim borders
+visualization-duration: 30     # Seconds the visualization stays visible
+```
 
-max-claim-blocks: 10000
-starting-claim-blocks: 1000
-blocks-per-hour: 100
+### Economy
 
+```yaml
 economy:
   enabled: true
-  buy-price: 1.0
-  sell-price: 0.5
+  buy-price: 1.0    # Cost per claim block when buying
+  sell-price: 0.5   # Money per claim block when selling
+```
 
-min-claim-width: 5
-min-claim-height: 5
+### Maintenance Tax
 
-# Cost (in claim blocks) of one chunk claim in chunk mode.
-chunk-cost: 256
+```yaml
+tax:
+  enabled: false                          # Master toggle (requires Vault)
+  per-claim: 1.0                           # Tax per claim per cycle
+  overdue-payment-deadline-hours: 72       # Max time a claim can stay locked before deletion
+  period-ticks: 1728000                    # Billing cycle (1728000 = 24 hours)
+  auto-delete-enabled: true               # Auto-delete locked claims after deadline
+```
 
-claim-tool: GOLDEN_SHOVEL
-visualization-block: GLOWSTONE
-visualization-duration: 30
+**How the maintenance tax works:**
 
-claimable-worlds:
+1. Once per billing cycle (default: 24 hours), the plugin calculates each player's tax as `(number_of_claims) x per-claim`.
+2. The amount is withdrawn from the player's Vault balance.
+3. If the player can pay: all claims stay unlocked, debt is cleared.
+4. If the player cannot pay: all their claims are **locked** — they cannot build, break, or interact with blocks in the claim.
+5. If `auto-delete-enabled` is `true`: claims that have been locked longer than `overdue-payment-deadline-hours` are automatically deleted.
+6. If `auto-delete-enabled` is `false`: locked claims stay locked indefinitely until the owner pays the debt via `/cmenu`.
+
+### World Configuration
+
+```yaml
+claimable-worlds:       # Worlds where claiming is allowed (empty = all)
   - world
   - world_nether
   - world_the_end
-unclaimable-worlds: []
-
-explosions-enabled-by-default: false
-block-explosions-in-unclaimed: true
-allow-pistons-unclaimed: true
-allow-redstone-unclaimed: true
+unclaimable-worlds: []  # Worlds where claiming is explicitly blocked
 ```
 
-All player-facing messages are in `messages.yml` and fully translatable.
+## Claim Management Menu (`/cmenu`)
 
----
+The `/cmenu` command opens a GUI with four options:
 
-## Folia Support
+- **Buy Claim Blocks** — Purchase additional claim blocks using economy.
+- **Sell Claim Blocks** — Sell unused claim blocks for money.
+- **Pay Maintenance Tax** — Pay off all accumulated tax debt and unlock claims.
+- **Claim Info** — View your claim count, available blocks, and used blocks.
 
-AllayClaims auto-detects Folia at startup and routes scheduled tasks to the
-correct scheduler (global, region, or async). No config change needed — install
-the same jar on Spigot, Paper, or Folia.
+## Admin Commands (`/bbclaim`)
 
----
+| Subcommand | Description |
+|---|---|
+| `/bbclaim delete <player>` | Delete all claims owned by a player |
+| `/bbclaim give <player> <blocks>` | Give claim blocks to a player |
+| `/bbclaim take <player> <blocks>` | Remove claim blocks from a player |
+| `/bbclaim ignore` | Toggle admin bypass (operators always bypass) |
 
-## Developer API
+## PlaceholderAPI Placeholders
 
-AllayClaims ships a public API (`com.allayclaims.api`) so other plugins can
-read and manipulate claims, react to cancellable events, and run tasks
-safely on both Bukkit and Folia.
+| Placeholder | Description |
+|---|---|
+| `%allayclaims_blocks%` | Player's available claim blocks |
+| `%allayclaims_used%` | Player's used claim blocks |
+| `%allayclaims_total%` | Player's total claim blocks |
+| `%allayclaims_claims%` | Number of claims owned |
 
-### Maven
-
-```xml
-<dependency>
-    <groupId>com.allayclaims</groupId>
-    <artifactId>allayclaims-api</artifactId>
-    <version>1.0.0</version>
-    <scope>provided</scope>
-</dependency>
-```
-
-### Getting the API
-
-```java
-AllayClaimsAPI api = getServer().getServicesManager().load(AllayClaimsAPI.class);
-// or
-AllayClaimsAPI api = AllayClaimsAPI.get();
-```
-
-### Events
-
-| Event | Fires | Cancellable |
-|-------|-------|-------------|
-| `ClaimCreateEvent` | Before a claim is created. | Yes |
-| `ClaimDeleteEvent` | Before a claim is deleted. | Yes |
-| `ClaimTrustEvent` | Before a player is trusted. | Yes |
-| `ClaimUntrustEvent` | Before a player is untrusted. | Yes |
-
-```java
-@EventHandler
-public void onCreate(ClaimCreateEvent e) {
-    if (e.claim().world().equalsIgnoreCase("event_world")) {
-        e.setCancelled(true);
-    }
-}
-```
-
-### Scheduler (Folia-safe)
-
-```java
-AllayScheduler s = api.getScheduler();
-s.runGlobal(() -> player.sendMessage("hi"));
-s.runAsyncLater(() -> loadData(), 20L);
-s.runRegion(RegionKey.of(player.getLocation()), () -> { /* region thread */ });
-```
-
-Full interface reference and examples: see `API.md`.
-
----
-
-## Building
+## Building from Source
 
 ```bash
-mvn package
+git clone https://github.com/plpthien3562-a11y/AllayClaims.git
+cd AllayClaims
+mvn clean package
 ```
 
-Outputs:
-- `plugin/target/AllayClaims-1.0.0.jar` — the runnable plugin (API shaded in).
-- `api/target/allayclaims-api-1.0.0.jar` — standalone API for downstream developers.
-
----
+The compiled jar will be in `target/AllayClaims.jar`.
 
 ## License
 
-MIT, Copyright (c) 2026 AllayMC.
+MIT License. See [LICENSE](LICENSE) for details.
+
+Copyright (c) 2026 AllayMC
